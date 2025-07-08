@@ -1,108 +1,141 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Interactive Circular Map - Rotterdam Makers District</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
-    <style>
-        body { margin:0; padding:0; font-family: sans-serif; }
-        #map { height: 100vh; }
-        .leaflet-popup-content label {
-            font-weight: bold;
-            display: block;
-            margin-top: 8px;
-        }
-        .leaflet-popup-content input,
-        .leaflet-popup-content textarea {
-            width: 100%;
-            margin-top: 2px;
-            padding: 5px;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <title>Interactive Circular Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; }
+    #map { width: 100%; height: 100vh; }
+    .leaflet-popup-content label {
+      display: block; font-weight: bold; margin-top: 0.5em;
+    }
+    .leaflet-popup-content input,
+    .leaflet-popup-content textarea,
+    .leaflet-popup-content select {
+      width: 100%; margin-top: 0.2em; padding: 5px;
+    }
+  </style>
 </head>
 <body>
 <div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
-// Initialize map
-var map = L.map('map').setView([51.901, 4.42], 13);
+const map = L.map('map', {
+  center: [51.905, 4.437],
+  zoom: 14,
+  minZoom: 13,
+  maxBounds: [[51.85, 4.30], [51.95, 4.55]]
+});
 
-// Add base tiles
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© OpenStreetMap contributors'
+const esriGray = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles &copy; Esri',
+  maxZoom: 16
 }).addTo(map);
 
-// Load GeoJSON polygon
+const cartoLight = L.tileLayer(
+  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap & CartoDB',
+  maxZoom: 18
+});
+
+const tonerLite = L.tileLayer(
+  'https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png', {
+  attribution: '&copy; Stamen Design',
+  maxZoom: 18
+});
+
+const satellite = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles &copy; Esri',
+  maxZoom: 18
+});
+
+const baseMaps = {
+  "Esri Gray": esriGray,
+  "Carto Light": cartoLight,
+  "Toner Lite": tonerLite,
+  "Satellite": satellite
+};
+
+L.control.layers(baseMaps).addTo(map);
+
 fetch('map.geojson')
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(geojson => {
-        const geoLayer = L.geoJSON(geojson, {
-            style: {
-                color: '#0077b6',
-                weight: 2,
-                fillColor: '#90e0ef',
-                fillOpacity: 0.3
-            }
-        }).addTo(map);
-        map.fitBounds(geoLayer.getBounds());
-    })
-    .catch(error => {
-        console.error('Error loading the GeoJSON:', error);
-        alert('Failed to load the boundary map.');
-    });
+  .then(res => res.json())
+  .then(data => {
+    const bounds = L.geoJSON(data).getBounds();
+    map.fitBounds(bounds);
+  });
 
-// Load saved pins
-let saved = JSON.parse(localStorage.getItem('circularPins') || "[]");
-saved.forEach(pin => {
-    L.marker(pin.latlng).addTo(map).bindPopup(pin.popup);
+const stored = JSON.parse(localStorage.getItem("circularPins") || "[]");
+stored.forEach(pin => {
+  L.marker(pin.latlng).addTo(map).bindPopup(pin.popup);
 });
 
-// Handle click
-map.on('click', function(e) {
-    const formHtml = `<form onsubmit="submitForm(event, this, ${e.latlng.lat}, ${e.latlng.lng})">
-        <label>Function in the Makers District:</label>
-        <input type="text" name="TypeActor" required />
+map.on('click', e => {
+  const form = `
+  <form onsubmit="submitForm(event, this, ${e.latlng.lat}, ${e.latlng.lng})">
+    <label>Your Role(s):</label>
+    <label><input type="checkbox" name="TypeActor" value="Entrepreneur" /> Entrepreneur</label>
+    <label><input type="checkbox" name="TypeActor" value="Civil servant" /> Civil servant</label>
+    <label><input type="checkbox" name="TypeActor" value="Researcher" /> Researcher</label>
+    <label><input type="checkbox" name="TypeActor" value="Student" /> Student</label>
+    <label><input type="checkbox" name="TypeActor" value="Inhabitant" /> Inhabitant</label>
+    <label><input type="checkbox" name="TypeActor" value="Port authority" /> Port authority</label>
+    <input type="text" name="TypeActorCustom" placeholder="Other (specify)" />
 
-        <label>Contribution to the circular transition:</label>
-        <textarea name="WatCirculair" required></textarea>
+    <label>Your Contribution:</label>
+    <textarea name="WatCirculair" required></textarea>
 
-        <label>Pillars of circularity:</label>
-        <input type="text" name="PijlerCirculair" />
+    <label>Pillars of Circularity:</label>
+    <label><input type="checkbox" name="PijlerCirculair" value="Refuse, Rethink, Reduce" /> Refuse, Rethink, Reduce</label>
+    <label><input type="checkbox" name="PijlerCirculair" value="Substitute" /> Substitute</label>
+    <label><input type="checkbox" name="PijlerCirculair" value="Reuse, Repair, Refurbish" /> Reuse, Repair, Refurbish</label>
+    <label><input type="checkbox" name="PijlerCirculair" value="Recycle, Recover" /> Recycle, Recover</label>
+    <label><input type="checkbox" name="PijlerCirculair" value="Nvt" /> Does not apply</label>
 
-        <label>Scale level of activity:</label>
-        <input type="text" name="SchaalCirculair" />
+    <label>Scale:</label>
+    <select name="Schaal">
+      <option value="">Choose...</option>
+      <option value="Micro">Micro - local</option>
+      <option value="Meso">Meso - regional</option>
+      <option value="Macro">Macro - national/global</option>
+      <option value="Nvt">Does not apply</option>
+    </select>
 
-        <button type="submit">Submit</button>
-    </form>`;
-    L.popup().setLatLng(e.latlng).setContent(formHtml).openOn(map);
+    <label>What obstacles and barriers do you experience when engaging in circular activities?</label>
+    <textarea name="Obstakels"></textarea>
+
+    <label>What makes the Rotterdam Makers District a suitable place for you?</label>
+    <textarea name="GeschiktePlek"></textarea>
+
+    <label>The Rotterdam Makers District aims to be a testing ground for the circular future. How does your initiative or organization contribute to this ambition?</label>
+    <textarea name="ProeftuinAansluiting"></textarea>
+
+    <button type="submit">Submit</button>
+  </form>`;
+  L.popup().setLatLng(e.latlng).setContent(form).openOn(map);
 });
 
-function submitForm(e, form, lat, lng) {
-    e.preventDefault();
-    const data = new FormData(form);
-    let content = "<b>Your Input:</b><br>";
-    for (let [k, v] of data.entries()) {
-        content += `<strong>${k}:</strong> ${v}<br>`;
-    }
-    const marker = L.marker([lat, lng]).addTo(map).bindPopup(content).openPopup();
+window.submitForm = (e, form, lat, lng) => {
+  e.preventDefault();
+  const formData = new FormData(form);
+  let summary = "";
+  for (let [k, v] of formData.entries()) {
+    summary += `<strong>${k}:</strong> ${v}<br>`;
+  }
 
-    let pins = JSON.parse(localStorage.getItem('circularPins') || "[]");
-    pins.push({ latlng: { lat, lng }, popup: content });
-    localStorage.setItem('circularPins', JSON.stringify(pins));
+  const popupContent = `<b>Submitted:</b><br>${summary}`;
+  L.marker([lat, lng]).addTo(map).bindPopup(popupContent).openPopup();
 
-    map.closePopup();
-}
+  const pins = JSON.parse(localStorage.getItem("circularPins") || "[]");
+  pins.push({ latlng: { lat, lng }, popup: popupContent });
+  localStorage.setItem("circularPins", JSON.stringify(pins));
+  map.closePopup();
+};
+
 </script>
 </body>
 </html>
