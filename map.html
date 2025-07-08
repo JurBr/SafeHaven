@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interactive Circular Map - Rotterdam Makers District</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-sA+4B58f5VnN7G9oUGyMyGiZkRg7Yih6Zg9zF3zt+rg="
+        crossorigin=""
+    />
+    <style>
+        body { margin:0; padding:0; font-family: sans-serif; }
+        #map { height: 100vh; }
+        .leaflet-popup-content label {
+            font-weight: bold;
+            display: block;
+            margin-top: 8px;
+        }
+        .leaflet-popup-content input,
+        .leaflet-popup-content textarea,
+        .leaflet-popup-content select {
+            width: 100%;
+            margin-top: 2px;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-o9N1j8MkfB7RQY4nE1U4lfZz0K/qaxW3mZo9t0V+n1Y="
+        crossorigin=""></script>
+<script src="https://unpkg.com/leaflet-geojson-vt@1.1.2/geojson-vt.js"></script>
+<script>
+
+// Create map
+var map = L.map('map').setView([51.905, 4.437], 14);
+
+// Add tile layer
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+// Load GeoJSON boundary
+fetch('map.geojson')
+    .then(response => response.json())
+    .then(data => {
+        L.geoJSON(data, {
+            style: {
+                color: '#3a6ea5',
+                weight: 3,
+                fillColor: '#b3d4fc',
+                fillOpacity: 0.2
+            }
+        }).addTo(map);
+    });
+
+// Restore saved pins
+let storedPins = JSON.parse(localStorage.getItem('circularPins')) || [];
+storedPins.forEach(pin => {
+    L.marker(pin.latlng).addTo(map)
+     .bindPopup(pin.popup).openPopup();
+});
+
+// Handle map click
+map.on('click', function(e) {
+    var popup = L.popup()
+        .setLatLng(e.latlng)
+        .setContent(`<form onsubmit="submitForm(event, this, ${e.latlng.lat}, ${e.latlng.lng})">
+            <label>Function in the Makers District:</label>
+            <input type="text" name="TypeActor" required />
+
+            <label>Contribution to the circular transition:</label>
+            <textarea name="WatCirculair" required></textarea>
+
+            <label>Pillars of circularity (comma-separated):</label>
+            <input type="text" name="PijlerCirculair" />
+
+            <label>At what scale level are you active?</label>
+            <input type="text" name="SchaalCirculair" />
+
+            <button type="submit">Submit</button>
+        </form>`)
+        .openOn(map);
+});
+
+function submitForm(event, form, lat, lng) {
+    event.preventDefault();
+    const formData = new FormData(form);
+    let content = '<b>Your Input:</b><br>';
+    for (let [key, value] of formData.entries()) {
+        content += `<strong>${key}:</strong> ${value}<br>`;
+    }
+
+    // Save pin to localStorage
+    let pins = JSON.parse(localStorage.getItem('circularPins')) || [];
+    pins.push({ latlng: { lat, lng }, popup: content });
+    localStorage.setItem('circularPins', JSON.stringify(pins));
+
+    // Add pin to map
+    L.marker([lat, lng]).addTo(map).bindPopup(content).openPopup();
+    map.closePopup();
+}
+
+</script>
+</body>
+</html>
