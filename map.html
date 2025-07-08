@@ -1,141 +1,151 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <title>Interactive Circular Map</title>
+  <title>Interactive Circular Map - RMD</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    body, html { margin: 0; padding: 0; height: 100%; }
-    #map { width: 100%; height: 100vh; }
-    .leaflet-popup-content label {
-      display: block; font-weight: bold; margin-top: 0.5em;
+    body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; }
+    #map { position: absolute; top: 0; right: 0; bottom: 0; left: 300px; }
+    #sidebar {
+      position: absolute; top: 0; left: 0; bottom: 0; width: 300px; padding: 1rem;
+      background: #eaf5ea; color: #063; overflow-y: auto; box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      z-index: 1000;
     }
-    .leaflet-popup-content input,
+    #sidebar h2 { margin-top: 0; font-size: 1.2rem; }
+    #translateBtn {
+      margin-top: 1rem; background: #d1e7dd; border: none; padding: 0.5rem;
+      cursor: pointer; color: #055160; border-radius: 5px;
+    }
+    .leaflet-popup-content {
+      max-height: 300px; overflow-y: auto;
+    }
+    .leaflet-popup-content label {
+      display: block; margin-top: 10px; font-weight: 600; color: #064e3b;
+    }
+    .leaflet-popup-content input[type="text"],
     .leaflet-popup-content textarea,
     .leaflet-popup-content select {
-      width: 100%; margin-top: 0.2em; padding: 5px;
+      width: 100%; margin-top: 4px; padding: 6px; border: 1px solid #ccc; border-radius: 4px;
+      background: #f4fbf4;
+    }
+    .leaflet-popup-content input[type="checkbox"] {
+      margin-right: 5px;
+    }
+    .leaflet-popup-content button {
+      margin-top: 1rem;
+      background: #81c784; color: white; border: none;
+      padding: 0.6rem; border-radius: 6px; cursor: pointer;
     }
   </style>
 </head>
 <body>
+<div id="sidebar">
+  <h2 id="sidebarText">
+    Dit is een kaart van het onderzoeksgebied waarop u uw eigen circulaire initiatief/activiteit kan toevoegen. Zoom in en klik op de kaart om een pin toe te voegen en wat uitleg te geven over uw bezigheden in het Rotterdam Makers District!
+  </h2>
+  <button id="translateBtn">Translate to English</button>
+  <br/><br/>
+  <a href="form.html" target="_blank">💬 Fill in the form on a separate page</a>
+</div>
 <div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 const map = L.map('map', {
-  center: [51.905, 4.437],
-  zoom: 14,
-  minZoom: 13,
+  center: [51.905, 4.437], zoom: 14, minZoom: 13,
   maxBounds: [[51.85, 4.30], [51.95, 4.55]]
 });
 
-const esriGray = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-  attribution: 'Tiles &copy; Esri',
-  maxZoom: 16
+const esriGray = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles &copy; Esri', maxZoom: 18
 }).addTo(map);
 
-const cartoLight = L.tileLayer(
-  'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OpenStreetMap & CartoDB',
-  maxZoom: 18
+const satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+  attribution: 'Tiles &copy; Esri', maxZoom: 18
 });
 
-const tonerLite = L.tileLayer(
-  'https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png', {
-  attribution: '&copy; Stamen Design',
-  maxZoom: 18
+L.control.layers({ "Esri Gray": esriGray, "Satellite": satellite }).addTo(map);
+
+fetch('map.geojson').then(r => r.json()).then(g => {
+  const bounds = L.geoJSON(g).getBounds();
+  map.fitBounds(bounds);
 });
 
-const satellite = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-  attribution: 'Tiles &copy; Esri',
-  maxZoom: 18
-});
-
-const baseMaps = {
-  "Esri Gray": esriGray,
-  "Carto Light": cartoLight,
-  "Toner Lite": tonerLite,
-  "Satellite": satellite
-};
-
-L.control.layers(baseMaps).addTo(map);
-
-fetch('map.geojson')
-  .then(res => res.json())
-  .then(data => {
-    const bounds = L.geoJSON(data).getBounds();
-    map.fitBounds(bounds);
-  });
-
-const stored = JSON.parse(localStorage.getItem("circularPins") || "[]");
-stored.forEach(pin => {
-  L.marker(pin.latlng).addTo(map).bindPopup(pin.popup);
-});
+const pins = JSON.parse(localStorage.getItem("circularPins") || "[]");
+pins.forEach(pin => L.marker(pin.latlng).addTo(map).bindPopup(pin.popup));
 
 map.on('click', e => {
   const form = `
-  <form onsubmit="submitForm(event, this, ${e.latlng.lat}, ${e.latlng.lng})">
-    <label>Your Role(s):</label>
-    <label><input type="checkbox" name="TypeActor" value="Entrepreneur" /> Entrepreneur</label>
-    <label><input type="checkbox" name="TypeActor" value="Civil servant" /> Civil servant</label>
-    <label><input type="checkbox" name="TypeActor" value="Researcher" /> Researcher</label>
-    <label><input type="checkbox" name="TypeActor" value="Student" /> Student</label>
-    <label><input type="checkbox" name="TypeActor" value="Inhabitant" /> Inhabitant</label>
-    <label><input type="checkbox" name="TypeActor" value="Port authority" /> Port authority</label>
-    <input type="text" name="TypeActorCustom" placeholder="Other (specify)" />
+    <form onsubmit="submitForm(event, this, ${e.latlng.lat}, ${e.latlng.lng})">
+      <label>In what way do you contribute to the circular transition?</label>
+      <textarea name="WatCirculair" required></textarea>
 
-    <label>Your Contribution:</label>
-    <textarea name="WatCirculair" required></textarea>
+      <label>Choose one or more pillars of circularity to which you contribute.</label>
+      <label><input type="checkbox" name="PijlerCirculair" value="Refuse, Rethink, Reduce" /> Refuse, Rethink, Reduce</label>
+      <label><input type="checkbox" name="PijlerCirculair" value="Substitute" /> Substitute</label>
+      <label><input type="checkbox" name="PijlerCirculair" value="Reuse, Repair, Refurbish" /> Reuse, Repair, Refurbish</label>
+      <label><input type="checkbox" name="PijlerCirculair" value="Recycle, Recover" /> Recycle, Recover</label>
+      <label><input type="checkbox" name="PijlerCirculair" value="Nvt" /> Does not apply</label>
 
-    <label>Pillars of Circularity:</label>
-    <label><input type="checkbox" name="PijlerCirculair" value="Refuse, Rethink, Reduce" /> Refuse, Rethink, Reduce</label>
-    <label><input type="checkbox" name="PijlerCirculair" value="Substitute" /> Substitute</label>
-    <label><input type="checkbox" name="PijlerCirculair" value="Reuse, Repair, Refurbish" /> Reuse, Repair, Refurbish</label>
-    <label><input type="checkbox" name="PijlerCirculair" value="Recycle, Recover" /> Recycle, Recover</label>
-    <label><input type="checkbox" name="PijlerCirculair" value="Nvt" /> Does not apply</label>
+      <label>At what scale are you active as a company?</label>
+      <select name="Schaal">
+        <option value="">Choose...</option>
+        <option value="Micro">Micro - local</option>
+        <option value="Meso">Meso - regional</option>
+        <option value="Macro">Macro - national/global</option>
+        <option value="Nvt">Does not apply</option>
+      </select>
 
-    <label>Scale:</label>
-    <select name="Schaal">
-      <option value="">Choose...</option>
-      <option value="Micro">Micro - local</option>
-      <option value="Meso">Meso - regional</option>
-      <option value="Macro">Macro - national/global</option>
-      <option value="Nvt">Does not apply</option>
-    </select>
+      <label>Your Role(s):</label>
+      <label><input type="checkbox" name="TypeActor" value="Entrepreneur" /> Entrepreneur</label>
+      <label><input type="checkbox" name="TypeActor" value="Civil servant" /> Civil servant</label>
+      <label><input type="checkbox" name="TypeActor" value="Researcher" /> Researcher</label>
+      <label><input type="checkbox" name="TypeActor" value="Student" /> Student</label>
+      <label><input type="checkbox" name="TypeActor" value="Inhabitant" /> Inhabitant</label>
+      <label><input type="checkbox" name="TypeActor" value="Port authority" /> Port authority</label>
+      <input type="text" name="TypeActorCustom" placeholder="Other (specify)" />
 
-    <label>What obstacles and barriers do you experience when engaging in circular activities?</label>
-    <textarea name="Obstakels"></textarea>
+      <label>What obstacles and barriers do you experience when engaging in circular activities?</label>
+      <textarea name="Obstakels"></textarea>
 
-    <label>What makes the Rotterdam Makers District a suitable place for you?</label>
-    <textarea name="GeschiktePlek"></textarea>
+      <label>What makes the Rotterdam Makers District a suitable place for you?</label>
+      <textarea name="GeschiktePlek"></textarea>
 
-    <label>The Rotterdam Makers District aims to be a testing ground for the circular future. How does your initiative or organization contribute to this ambition?</label>
-    <textarea name="ProeftuinAansluiting"></textarea>
+      <label>How does your initiative or organization contribute to the RMD’s ambition to be a testing ground for the circular future?</label>
+      <textarea name="ProeftuinAansluiting"></textarea>
 
-    <button type="submit">Submit</button>
-  </form>`;
+      <button type="submit">Submit</button>
+    </form>`;
   L.popup().setLatLng(e.latlng).setContent(form).openOn(map);
 });
 
 window.submitForm = (e, form, lat, lng) => {
   e.preventDefault();
-  const formData = new FormData(form);
-  let summary = "";
-  for (let [k, v] of formData.entries()) {
+  const fd = new FormData(form);
+  let summary = '';
+  for (let [k, v] of fd.entries()) {
     summary += `<strong>${k}:</strong> ${v}<br>`;
   }
-
-  const popupContent = `<b>Submitted:</b><br>${summary}`;
-  L.marker([lat, lng]).addTo(map).bindPopup(popupContent).openPopup();
-
+  L.marker([lat, lng]).addTo(map).bindPopup(`<b>Submitted:</b><br>${summary}`).openPopup();
   const pins = JSON.parse(localStorage.getItem("circularPins") || "[]");
-  pins.push({ latlng: { lat, lng }, popup: popupContent });
+  pins.push({ latlng: { lat, lng }, popup: summary });
   localStorage.setItem("circularPins", JSON.stringify(pins));
   map.closePopup();
 };
 
+// Translation toggle
+document.getElementById("translateBtn").addEventListener("click", () => {
+  const el = document.getElementById("sidebarText");
+  if (el.dataset.lang === "en") {
+    el.textContent = "Dit is een kaart van het onderzoeksgebied waarop u uw eigen circulaire initiatief/activiteit kan toevoegen. Zoom in en klik op de kaart om een pin toe te voegen en wat uitleg te geven over uw bezigheden in het Rotterdam Makers District!";
+    el.dataset.lang = "nl";
+  } else {
+    el.textContent = "This is a map of the research area where you can add your own circular initiative or activity. Zoom in and click the map to place a pin and describe your work in the Rotterdam Makers District.";
+    el.dataset.lang = "en";
+  }
+});
 </script>
 </body>
 </html>
