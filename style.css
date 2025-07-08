@@ -1,0 +1,112 @@
+/* style.css */
+
+/* General Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f7f9f5;
+    color: #333;
+    line-height: 1.6;
+    padding: 1rem;
+    max-width: 1200px;
+    margin: auto;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #d0d0d0;
+}
+
+header h1 {
+    font-size: 2.2rem;
+    color: #1a4e6c;
+    margin-top: 1rem;
+}
+
+header h2 {
+    font-size: 1.2rem;
+    color: #3e7463;
+    margin-top: 0.3rem;
+}
+
+.profile-pic {
+    width: 130px;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid #a5caa5;
+    margin: 1rem auto;
+    display: block;
+}
+
+section {
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+h3 {
+    color: #40796b;
+    margin-bottom: 1rem;
+    font-size: 1.4rem;
+    border-left: 4px solid #a5caa5;
+    padding-left: 0.5rem;
+}
+
+ul {
+    list-style-type: disc;
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1rem auto;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+footer {
+    text-align: center;
+    font-size: 0.9rem;
+    padding: 1rem 0;
+    color: #777;
+    border-top: 1px solid #ccc;
+    margin-top: 2rem;
+}
+
+@media screen and (max-width: 768px) {
+    body {
+        padding: 0.5rem;
+    }
+    header h1 {
+        font-size: 1.8rem;
+    }
+    header h2 {
+        font-size: 1rem;
+    }
+    section {
+        padding: 1rem;
+    }
+}
+
+/* Additional port character */
+#visuals::before {
+    content: "Port visuals and circular imagery";
+    display: block;
+    font-style: italic;
+    text-align: center;
+    color: #999;
+    margin-bottom: 1rem;
+}
