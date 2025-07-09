@@ -1,0 +1,30 @@
+[
+  {
+    "lat": 51.901,
+    "lng": 4.432,
+    "TypeActor": "Entrepreneur",
+    "PijlerCirculair": "Refuse, Rethink, Reduce",
+    "WatCirculair": "We design reusable shipping modules to minimize waste in the port."
+  },
+  {
+    "lat": 51.905,
+    "lng": 4.419,
+    "TypeActor": "Port authority",
+    "PijlerCirculair": "Recycle, Recover",
+    "WatCirculair": "We've invested in infrastructure to collect and recycle dredging materials."
+  },
+  {
+    "lat": 51.897,
+    "lng": 4.455,
+    "TypeActor": "Researcher",
+    "PijlerCirculair": "Reuse, Repair, Refurbish",
+    "WatCirculair": "Our team studies industrial reuse of machinery at the innovation dock."
+  },
+  {
+    "lat": 51.899,
+    "lng": 4.445,
+    "TypeActor": "Student",
+    "PijlerCirculair": "Substitute",
+    "WatCirculair": "We created a biobased composite from oyster shells for local construction."
+  }
+]

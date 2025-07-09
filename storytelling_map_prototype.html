@@ -1,0 +1,69 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Storytelling Map – Circular Initiatives</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body, #map { height: 100%; margin: 0; }
+    .label-box {
+      background-color: #e6f7e6;
+      color: #1b4332;
+      border: 1px solid #a3d9a5;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 0.85rem;
+      box-shadow: 1px 1px 5px rgba(0,0,0,0.2);
+      max-width: 250px;
+    }
+    .label-icon {
+      font-size: 1.2rem;
+      margin-right: 4px;
+    }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Map Setup
+const map = L.map('map').setView([51.901, 4.435], 15);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; OpenStreetMap & CartoDB',
+  maxZoom: 18
+}).addTo(map);
+
+// Actor type → emoji icon
+const actorIcons = {
+  "Entrepreneur": "💼",
+  "Port authority": "⚓",
+  "Researcher": "🔬",
+  "Student": "🎓",
+  "Inhabitant": "🏘️"
+};
+
+// Load fake data
+fetch("fake_circular_data.json")
+  .then(res => res.json())
+  .then(data => {
+    data.forEach(item => {
+      const icon = actorIcons[item.TypeActor] || "🌱";
+      const popup = `
+        <div class="label-box">
+          <span class="label-icon">${icon}</span><strong>${item.TypeActor}</strong><br>
+          <em>${item.PijlerCirculair}</em><br><br>
+          ${item.WatCirculair}
+        </div>
+      `;
+      L.marker([item.lat, item.lng]).addTo(map)
+        .bindPopup(popup, { offset: [0, -8] }).openPopup();
+    });
+  });
+</script>
+</body>
+</html>
