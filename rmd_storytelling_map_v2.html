@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>RMD Storytelling Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      font-family: 'Courier New', Courier, monospace;
+      background: #fefcf8;
+    }
+
+    .annotation-label {
+      background-color: rgba(255, 255, 255, 0.85);
+      border: 1px dashed #000;
+      padding: 6px 10px;
+      font-size: 13px;
+      max-width: 220px;
+      box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+    }
+
+    .legend {
+      position: absolute;
+      bottom: 30px;
+      left: 10px;
+      background: rgba(255,255,255,0.9);
+      padding: 10px;
+      border: 1px solid #000;
+      max-width: 250px;
+      font-size: 12px;
+      line-height: 1.4em;
+    }
+
+    .legend h4 {
+      margin: 0 0 5px;
+      font-weight: bold;
+    }
+
+    .legend .icon {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+
+    .icon-human { background: #d95f02; }
+    .icon-cultural { background: #1b9e77; }
+    .icon-creative { background: #7570b3; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="legend">
+    <h4>🌍 Capital Layers</h4>
+    <div><span class="icon icon-human"></span> Human Capital</div>
+    <div><span class="icon icon-cultural"></span> Cultural Capital</div>
+    <div><span class="icon icon-creative"></span> Creative Capital</div>
+  </div>
+
+  <script>
+    const map = L.map('map').setView([51.900, 4.440], 14);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; <a href="https://carto.com/attributions">CARTO</a>',
+      subdomains: 'abcd',
+      opacity: 0.8
+    }).addTo(map);
+
+    const layers = {
+      human: L.layerGroup().addTo(map),
+      cultural: L.layerGroup().addTo(map),
+      creative: L.layerGroup().addTo(map)
+    };
+
+    const icons = {
+      human: L.divIcon({ className: 'icon icon-human', iconSize: [12, 12] }),
+      cultural: L.divIcon({ className: 'icon icon-cultural', iconSize: [12, 12] }),
+      creative: L.divIcon({ className: 'icon icon-creative', iconSize: [12, 12] })
+    };
+
+    // Google Sheets CSV export link (make sure sheet is published!)
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRRY7...YOUR_SHEET_ID.../pub?output=csv';
+
+    Papa.parse(sheetURL, {
+      download: true,
+      header: true,
+      complete: function(results) {
+        results.data.forEach(row => {
+          const lat = parseFloat(row.lat);
+          const lng = parseFloat(row.lng);
+          const layer = row.capital.toLowerCase();
+          const text = row.annotation;
+
+          if (!isNaN(lat) && !isNaN(lng) && layer in layers) {
+            const marker = L.marker([lat, lng], { icon: icons[layer] }).addTo(layers[layer]);
+            marker.bindPopup(`<div class='annotation-label'>${text}</div>`);
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
